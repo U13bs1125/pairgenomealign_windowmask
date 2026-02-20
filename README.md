@@ -1,110 +1,123 @@
-<h1>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/nf-core-pairgenomealignmask_logo_dark.png">
-    <img alt="nf-core/pairgenomealignmask" src="docs/images/nf-core-pairgenomealignmask_logo_light.png">
-  </picture>
-</h1>
+# Genome repeat masking pipeline
 
-[![GitHub Actions CI Status](https://github.com/nf-core/pairgenomealignmask/actions/workflows/ci.yml/badge.svg)](https://github.com/nf-core/pairgenomealignmask/actions/workflows/ci.yml)
-[![GitHub Actions Linting Status](https://github.com/nf-core/pairgenomealignmask/actions/workflows/linting.yml/badge.svg)](https://github.com/nf-core/pairgenomealignmask/actions/workflows/linting.yml)[![AWS CI](https://img.shields.io/badge/CI%20tests-full%20size-FF9900?labelColor=000000&logo=Amazon%20AWS)](https://nf-co.re/pairgenomealignmask/results)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
-[![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
+This is a local pipeline to repeat-mask genomes before feeding them to
+<https://github.com/nf-core/pairgenomealign>.  The rationale is that it is
+better when all soft masks have been produced by the same pipeline…
 
-[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A523.04.0-23aa62.svg)](https://www.nextflow.io/)
-[![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
-[![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
-[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
-[![Launch on Seqera Platform](https://img.shields.io/badge/Launch%20%F0%9F%9A%80-Seqera%20Platform-%234256e7)](https://cloud.seqera.io/launch?pipeline=https://github.com/nf-core/pairgenomealignmask)
+## What it does:
 
-[![Get help on Slack](http://img.shields.io/badge/slack-nf--core%20%23pairgenomealignmask-4A154B?labelColor=000000&logo=slack)](https://nfcore.slack.com/channels/pairgenomealignmask)[![Follow on Twitter](http://img.shields.io/badge/twitter-%40nf__core-1DA1F2?labelColor=000000&logo=twitter)](https://twitter.com/nf_core)[![Follow on Mastodon](https://img.shields.io/badge/mastodon-nf__core-6364ff?labelColor=FFFFFF&logo=mastodon)](https://mstdn.science/@nf_core)[![Watch on YouTube](http://img.shields.io/badge/youtube-nf--core-FF0000?labelColor=000000&logo=youtube)](https://www.youtube.com/c/nf-core)
+This pipeline takes genomes as inputs and soft-masks their repeats with the following software:
 
-## Introduction
+- [tantan](https://gitlab.com/mcfrith/tantan), version 51.  Tantan is our default choice from a long time because TRF used to be non-free.
+- [WindowMasker](https://doi.org/10.1093/bioinformatics/bti774), version 1.0.0 distributed with [BLAST](https://www.ncbi.nlm.nih.gov/books/NBK569845/#ckbk_Createmaskedb.Create_masking_inform_1) 2.17.0.
+- [RepeatMasker](https://www.repeatmasker.org/) version 4.1.9.
 
-**nf-core/pairgenomealignmask** is a bioinformatics pipeline that ...
+The input of repeatmasker can be any of:
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+- [RepeatModeler](https://github.com/Dfam-consortium/RepeatModeler) version 2.0.7 (default)
+- [Dfam](https://www.dfam.org/home) (optional)
+- A custom repeat library (optional)
 
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
+RepeatMasker and RepeatModeler are run from the same bioconda package as the standard _nf-core_ module.
 
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+The pipeline then merges the soft masks of the RepeatMasker runs, and then merges that with the tantan and WindowMasker runs.
+
+Finally, the pipeline prepares a MultiQC report that shows the extent of masking for each tool.
+
+## Disclaimer
+
+This is not an official pipeline. This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) initative, and reused here under the [MIT license](https://github.com/nf-core/tools/blob/master/LICENSE).
+
+> The nf-core framework for community-curated bioinformatics pipelines.
+>
+> Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
+>
+> Nat Biotechnol. 2020 Feb 13. doi: 10.1038/s41587-020-0439-x.
 
 ## Usage
 
-> [!NOTE]
-> If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
+**This pipeline does not work with conda.**
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
-
-First, prepare a samplesheet with your input data that looks as follows:
+First make a sample sheet with usual _nf-core_ pipelines.
 
 `samplesheet.csv`:
 
 ```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+sample,fasta
+query_1,path-to-query-genome-file-one.fasta.gz
+query_2,path-to-query-genome-file-two.fasta.gz
 ```
 
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
+Genome files are uncompressed because [WindowMasker does not handle `stdin`
+input](https://github.com/ncbi/ncbi-cxx-toolkit-public/issues/21).
 
--->
-
-Now, you can run the pipeline using:
-
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
+Then run the pipeline as usual:
 
 ```bash
-nextflow run nf-core/pairgenomealignmask \
-   -profile <docker/singularity/.../institute> \
+nextflow run oist/LuscombeU_stlrepeatmask \
+   -profile oist \
    --input samplesheet.csv \
    --outdir <OUTDIR>
 ```
 
-> [!WARNING]
-> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
-> see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
+Test the dev branch of the pipeline (adapt the `-w` option for your own case!
 
-For more details and further functionality, please refer to the [usage documentation](https://nf-co.re/pairgenomealignmask/usage) and the [parameter documentation](https://nf-co.re/pairgenomealignmask/parameters).
+```bash
+nextflow run oist/LuscombeU_stlrepeatmask \
+   -profile oist,test \
+   -w /flash/LuscombeU/`whoami`/cache/deletemeTest \
+   --outdir results_test
+```
+
+Test the local checkout
+
+```bash
+nextflow run ./main.nf \
+   -profile oist,test \
+   -w /flash/LuscombeU/`whoami`/cache/deletemeTest \
+   --outdir results_test
+```
+
+## Options
+
+- Point `--repeatlib` to a FASTA file to have an extra RepeatMasker run using it as a library.
+- Set `--taxon` to a taxon name to have an extra RepeatMasker run using the `-species` option set to that taxon.
+- Point `--dfam` to a directory containing a `famdb` subdirectory with the FamDB files in HDF5 format (not gzipped).
+
+### Dfam
+
+Most containers that provide RepeatMasker do not contain a full copy of Dfam,
+which is huge.  However they sometimes have a stub, for instance under
+`/usr/local/share/RepeatMasker/Libraries` or `/opt/RepeatMasker/Libraries`.
+Interstingly, when using the `--libdir` option, Dfam has to be in a subfolder
+named `famdb`, although it is named `FamDB` in the download website.
 
 ## Pipeline output
 
-To see the results of an example test run with a full size dataset refer to the [results](https://nf-co.re/pairgenomealignmask/results) tab on the nf-core website pipeline page.
-For more details about the output files and reports, please refer to the
-[output documentation](https://nf-co.re/pairgenomealignmask/output).
+### `tantan`, `repeatmodeler`, `windowmasker`, `dfam` (optional), `extlib` (optional), `mergedmasks`
+
+- Masked genome file (compressed with `bgzip`).
+- BED file representing the masked regions.
+- Summary statistics of the softmasked genome.
+
+### Only in `repeatmodeler`
+
+- De novo detected repeats (`.fa`, `.log`, `.stk` and BLAST database files `.n*`)
+
+## Resource usage
+
+On a test run on haplotype-merged and diploid assemblies of _Oikopleura dioica_ (2n = 60 Mbp):
+
+- CPU usage was ~50 % for most processes. RepeatModeller was allocated 24 cores and used ~10 on average.
+- Memory usage was less than 1 GB for all processes except RepeatModeller (~6 GB, max 8 GB).
+- All processes needed only 10 % of the allocated time, except for RepeatModeller, which took between 100 and 500 minutes.
+- On a couple of primate genomes, RepeatModeller managed to keep its 24 cores 60% busy for ~30 hours using 40 GB memory.
+
+## Future directions
+
+- It may be interesting to add TRF and ULTRA, and compare and combine their results to the ones of tantan.
 
 ## Credits
 
-nf-core/pairgenomealignmask was originally written by Mahdi.
-
-We thank the following people for their extensive assistance in the development of this pipeline:
-
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
-
-## Contributions and Support
-
-If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
-
-For further information or help, don't hesitate to get in touch on the [Slack `#pairgenomealignmask` channel](https://nfcore.slack.com/channels/pairgenomealignmask) (you can join with [this invite](https://nf-co.re/join/slack)).
-
-## Citations
-
-<!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
-<!-- If you use nf-core/pairgenomealignmask for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
-
-<!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
-
-An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
-
-You can cite the `nf-core` publication as follows:
-
-> **The nf-core framework for community-curated bioinformatics pipelines.**
->
-> Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
->
-> _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
+This pipeline was originally written by [Mahdi](https://github.com/U13bs1125) and then
+taken over by @charles-plessy.
